@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Товары - Склад продуктов{% endblock %}
+{% block header %}Управление товарами{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <a href="{{ url_for('add_tovar') }}" class="btn btn-primary">➕ Добавить товар</a>
+    <div class="table-info">
+        Всего товаров: {{ tovars|length }}
+    </div>
+</div>
+
+{% if tovars %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Категория</th>
+            <th>Количество</th>
+            <th>Объем упаковки</th>
+            <th>Цена</th>
+            <th>Срок годности</th>
+            <th>Склад</th>
+            <th>Поставщик</th>
+            <th>Условия хранения</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tovar in tovars %}
+        <tr>
+            <td>{{ tovar.id_tov }}</td>
+            <td><strong>{{ tovar.category_name }}</strong></td>
+            <td>
+                <span class="quantity {% if tovar.kol < 50 %}low-quantity{% endif %}">
+                    {{ tovar.kol }} {{ tovar.ed_izm }}
+                </span>
+            </td>
+            <td>{{ tovar.ob_ypak }}</td>
+            <td><strong>{{ "%.2f"|format(tovar.cena) }} руб.</strong></td>
+            <td>
+                {% if tovar.srok_god %}
+                    {% set days_left = (tovar.srok_god - today).days %}
+                    <span class="expiry-date {% if days_left < 30 %}expiring-soon{% endif %}">
+                        {{ tovar.srok_god.strftime('%d.%m.%Y') }}
+                        {% if days_left < 30 %}
+                            <br><small>(осталось {{ days_left }} дн.)</small>
+                        {% endif %}
+                    </span>
+                {% else %}
+                    <span class="no-expiry">Не указан</span>
+                {% endif %}
+            </td>
+            <td>{{ tovar.sklad_adres }}</td>
+            <td>{{ tovar.postav_name }}</td>
+            <td>{{ tovar.usl_hr|default('Стандартные', true) }}</td>
+            <td class="actions">
+                <a href="{{ url_for('edit_tovar', id_tov=tovar.id_tov) }}" class="btn btn-edit">✏️ Изменить</a>
+                <a href="{{ url_for('delete_tovar', id_tov=tovar.id_tov) }}" class="btn btn-delete" 
+                   onclick="return confirm('Вы уверены, что хотите удалить товар \"{{ tovar.category_name }}\"?')">🗑️ Удалить</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="no-data">
+    <h3>📭 Товары не найдены</h3>
+    <p>В системе пока нет товаров. <a href="{{ url_for('add_tovar') }}">Добавьте первый товар</a>.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Добавляем сегодняшнюю дату для вычисления срока годности
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        document.querySelectorAll('.expiry-date').forEach(function(element) {
+            // Логика подсветки уже реализована в CSS через классы
+        });
+    });
+</script>
+{% endblock %}

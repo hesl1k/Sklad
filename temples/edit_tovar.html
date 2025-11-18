@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать товар - Склад продуктов{% endblock %}
+{% block header %}Редактирование товара{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <form method="POST" class="tovar-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="id_kat">Категория *</label>
+                <select id="id_kat" name="id_kat" required>
+                    <option value="">-- Выберите категорию --</option>
+                    {% for kateg in kategs %}
+                    <option value="{{ kateg.id_kat }}" {% if kateg.id_kat == tovar.id_kat %}selected{% endif %}>
+                        {{ kateg.nazv }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="kol">Количество *</label>
+                <input type="number" id="kol" name="kol" value="{{ tovar.kol }}" min="0" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ob_ypak">Объем упаковки *</label>
+                <input type="number" id="ob_ypak" name="ob_ypak" value="{{ tovar.ob_ypak }}" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ed_izm">Единица измерения *</label>
+                <select id="ed_izm" name="ed_izm" required>
+                    <option value="">-- Выберите единицу --</option>
+                    <option value="кг" {% if tovar.ed_izm == 'кг' %}selected{% endif %}>кг</option>
+                    <option value="литр" {% if tovar.ed_izm == 'литр' %}selected{% endif %}>литр</option>
+                    <option value="шт" {% if tovar.ed_izm == 'шт' %}selected{% endif %}>шт</option>
+                    <option value="упаковка" {% if tovar.ed_izm == 'упаковка' %}selected{% endif %}>упаковка</option>
+                    <option value="банка" {% if tovar.ed_izm == 'банка' %}selected{% endif %}>банка</option>
+                    <option value="бутылка" {% if tovar.ed_izm == 'бутылка' %}selected{% endif %}>бутылка</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="cena">Цена (руб) *</label>
+                <input type="number" id="cena" name="cena" value="{{ tovar.cena }}" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="usl_hr">Условия хранения</label>
+                <select id="usl_hr" name="usl_hr">
+                    <option value="">-- Выберите условия --</option>
+                    <option value="Холод" {% if tovar.usl_hr == 'Холод' %}selected{% endif %}>Холод</option>
+                    <option value="Морозильник" {% if tovar.usl_hr == 'Морозильник' %}selected{% endif %}>Морозильник</option>
+                    <option value="Сухое место" {% if tovar.usl_hr == 'Сухое место' %}selected{% endif %}>Сухое место</option>
+                    <option value="Комнатная температура" {% if tovar.usl_hr == 'Комнатная температура' %}selected{% endif %}>Комнатная температура</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="srok_god">Срок годности *</label>
+                <input type="date" id="srok_god" name="srok_god" 
+                       value="{{ tovar.srok_god.strftime('%Y-%m-%d') if tovar.srok_god else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="id_skl">Склад *</label>
+                <select id="id_skl" name="id_skl" required>
+                    <option value="">-- Выберите склад --</option>
+                    {% for sklad in sklads %}
+                    <option value="{{ sklad.id_skl }}" {% if sklad.id_skl == tovar.id_skl %}selected{% endif %}>
+                        {{ sklad.adres }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="id_post">Поставщик *</label>
+                <select id="id_post" name="id_post" required>
+                    <option value="">-- Выберите поставщика --</option>
+                    {% for postav in postavs %}
+                    <option value="{{ postav.id_post }}" {% if postav.id_post == tovar.id_post %}selected{% endif %}>
+                        {{ postav.komp }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить изменения</button>
+            <a href="{{ url_for('tovars') }}" class="btn btn-secondary">❌ Отмена</a>
+        </div>
+    </form>
+</div>
+
+<div class="current-info">
+    <h3>📋 Текущая информация о товаре:</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>ID товара:</strong> {{ tovar.id_tov }}
+        </div>
+        <div class="info-item">
+            <strong>Категория:</strong> {{ tovar.category_name }}
+        </div>
+        <div class="info-item">
+            <strong>Склад:</strong> {{ tovar.sklad_adres }}
+        </div>
+        <div class="info-item">
+            <strong>Поставщик:</strong> {{ tovar.postav_name }}
+        </div>
+    </div>
+</div>
+{% endblock %}

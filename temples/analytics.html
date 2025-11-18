@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Аналитика - Склад продуктов{% endblock %}
+{% block header %}Аналитика и отчеты{% endblock %}
+
+{% block content %}
+<div class="analytics-header">
+    <h2>📊 Аналитические отчеты</h2>
+    <p>Здесь вы можете просмотреть различные аналитические данные по складу</p>
+</div>
+
+<div class="analytics-sections">
+    <!-- Товары с истекающим сроком годности -->
+    <div class="analytics-section">
+        <h3>⏰ Товары с истекающим сроком годности</h3>
+        <div class="filter-controls">
+            <label for="days-filter">Показать товары, срок годности которых истекает в течение:</label>
+            <select id="days-filter">
+                <option value="30">30 дней</option>
+                <option value="60">60 дней</option>
+                <option value="90">90 дней</option>
+            </select>
+            <button onclick="loadExpiringProducts()" class="btn btn-primary">Обновить</button>
+        </div>
+        <div id="expiring-products" class="chart-container">
+            <div class="loading">Загрузка данных...</div>
+        </div>
+    </div>
+
+    <!-- Товары с низким количеством -->
+    <div class="analytics-section">
+        <h3>📉 Товары с низким количеством</h3>
+        <div class="filter-controls">
+            <label for="threshold-filter">Порог количества:</label>
+            <select id="threshold-filter">
+                <option value="50">Менее 50</option>
+                <option value="100" selected>Менее 100</option>
+                <option value="200">Менее 200</option>
+            </select>
+            <button onclick="loadLowQuantityProducts()" class="btn btn-primary">Обновить</button>
+        </div>
+        <div id="low-quantity-products" class="chart-container">
+            <div class="loading">Загрузка данных...</div>
+        </div>
+    </div>
+
+    <!-- Самые дорогие товары -->
+    <div class="analytics-section">
+        <h3>💰 Самые дорогие товары</h3>
+        <div class="filter-controls">
+            <label for="limit-filter">Количество товаров:</label>
+            <select id="limit-filter">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+            </select>
+            <button onclick="loadHighPriceProducts()" class="btn btn-primary">Обновить</button>
+        </div>
+        <div id="high-price-products" class="chart-container">
+            <div class="loading">Загрузка данных...</div>
+        </div>
+    </div>
+
+    <!-- Анализ по категориям -->
+    <div class="analytics-section">
+        <h3>📈 Анализ по категориям</h3>
+        <button onclick="loadSalesByCategory()" class="btn btn-primary">Загрузить отчет</button>
+        <div id="sales-by-category" class="chart-container">
+            <div class="loading">Нажмите "Загрузить отчет" для отображения данных</div>
+        </div>
+    </div>
+</div>
+
+<div class="analytics-info">
+    <h3>ℹ️ Использование аналитики</h3>
+    <div class="info-grid">
+        <div class="info-card">
+            <h4>⏰ Сроки годности</h4>
+            <p>Отслеживайте товары с истекающим сроком годности для предотвращения потерь</p>
+        </div>
+        <div class="info-card">
+            <h4>📉 Остатки</h4>
+            <p>Контролируйте минимальные остатки для своевременного пополнения склада</p>
+        </div>
+        <div class="info-card">
+            <h4>💰 Цены</h4>
+            <p>Анализируйте ценовую политику и самые дорогие позиции</p>
+        </div>
+        <div class="info-card">
+            <h4>📈 Категории</h4>
+            <p>Оценивайте распределение товаров по категориям для оптимизации ассортимента</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Загрузка данных при открытии страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        loadExpiringProducts();
+        loadLowQuantityProducts();
+        loadHighPriceProducts();
+    });
+
+    function loadExpiringProducts() {
+        const days = document.getElementById('days-filter').value;
+        fetch(`/api/tovars_expiring_soon?days=${days}`)
+            .then(response => response.json())
+            .then(data => displayExpiringProducts(data));
+    }
+
+    function loadLowQuantityProducts() {
+        const threshold = document.getElementById('threshold-filter').value;
+        fetch(`/api/tovars_low_quantity?threshold=${threshold}`)
+            .then(response => response.json())
+            .then(data => displayLowQuantityProducts(data));
+    }
+
+    function loadHighPriceProducts() {
+        const limit = document.getElementById('limit-filter').value;
+        fetch(`/api/tovars_high_price?limit=${limit}`)
+            .then(response => response.json())
+            .then(data => displayHighPriceProducts(data));
+    }
+
+    function loadSalesByCategory() {
+        fetch('/api/sales_by_category')
+            .then(response => response.json())
+            .then(data => displaySalesByCategory(data));
+    }
+
+    function displayExpiringProducts(data) {
+        const container = document.getElementById('expiring-products');
+        if (data.length === 0) {
+            container.innerHTML = '<div class="no-data">✅ Нет товаров с истекающим сроком годности</div>';
+            return;
+        }
+
+        let html = '<table><thead><tr><th>Товар</th><th>Категория</th><th>Срок годности</th><th>Осталось дней</th></tr></thead><tbody>';
+        data.forEach(item => {
+            const daysLeft = item.days_until_expiry;
+            const rowClass = daysLeft < 7 ? 'critical' : daysLeft < 30 ? 'warning' : '';
+            html += `<tr class="${rowClass}">
+                <td>Товар #${item.id_tov}</td>
+                <td>${item.category}</td>
+                <td>${new Date(item.srok_god).toLocaleDateString()}</td>
+                <td><strong>${daysLeft}</strong> дн.</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function displayLowQuantityProducts(data) {
+        const container = document.getElementById('low-quantity-products');
+        if (data.length === 0) {
+            container.innerHTML = '<div class="no-data">✅ Все товары в достаточном количестве</div>';
+            return;
+        }
+
+        let html = '<table><thead><tr><th>Товар</th><th>Категория</th><th>Количество</th><th>Склад</th></tr></thead><tbody>';
+        data.forEach(item => {
+            html += `<tr>
+                <td>Товар #${item.id_tov}</td>
+                <td>${item.category}</td>
+                <td><strong class="low-quantity">${item.kol}</strong></td>
+                <td>${item.sklad}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function displayHighPriceProducts(data) {
+        const container = document.getElementById('high-price-products');
+        if (data.length === 0) {
+            container.innerHTML = '<div class="no-data">❌ Данные не найдены</div>';
+            return;
+        }
+
+        let html = '<table><thead><tr><th>Товар</th><th>Категория</th><th>Цена</th><th>Ед. изм.</th></tr></thead><tbody>';
+        data.forEach(item => {
+            html += `<tr>
+                <td>Товар #${item.id_tov}</td>
+                <td>${item.category}</td>
+                <td><strong class="high-price">${item.cena} руб.</strong></td>
+                <td>${item.ed_izm}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function displaySalesByCategory(data) {
+        const container = document.getElementById('sales-by-category');
+        if (data.length === 0) {
+            container.innerHTML = '<div class="no-data">❌ Данные не найдены</div>';
+            return;
+        }
+
+        let html = '<table><thead><tr><th>Категория</th><th>Кол-во товаров</th><th>Средняя цена</th><th>Общее количество</th></tr></thead><tbody>';
+        data.forEach(item => {
+            html += `<tr>
+                <td><strong>${item.category}</strong></td>
+                <td>${item.product_count}</td>
+                <td>${item.avg_price ? item.avg_price.toFixed(2) : 0} руб.</td>
+                <td>${item.total_quantity || 0}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+</script>
+{% endblock %}
